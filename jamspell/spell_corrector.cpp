@@ -69,7 +69,7 @@ TScoredWords TSpellCorrector::GetCandidatesRawWithScores(const TWords& sentence,
 
     bool firstLevel = true;
     bool knownWord = false;
-    if (candidates.empty()) {
+    if (candidates.size() < MinCandidatesToCheck) {
         candidates = Edits(w);
         firstLevel = false;
     }
