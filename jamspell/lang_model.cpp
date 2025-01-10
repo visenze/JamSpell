@@ -61,6 +61,20 @@ void PrepareNgramKeys(const T& grams, std::vector<std::string>& keys) {
     }
 }
 
+template<typename T>
+int RemoveLowFreqNgramKeys(T& grams, const int& minWordFreq) {
+    int numRemoved = 0;
+    for( auto it = grams.begin(); it != grams.end(); ) {
+        if (it->second < minWordFreq ) {
+	    it = grams.erase(it);
+	    numRemoved++;
+	} else {
+	    ++it;
+	}
+    }
+    return numRemoved;
+}
+
 static const uint32_t MAX_REAL_NUM = 268435456;
 static const uint32_t MAX_AVAILABLE_NUM = 65536;
 
@@ -95,7 +109,7 @@ void InitializeBuckets(const T& grams, TPerfectHash& ph, std::vector<std::pair<u
     }
 }
 
-bool TLangModel::Train(const std::string& fileName, const std::string& alphabetFile) {
+bool TLangModel::Train(const std::string& fileName, const std::string& alphabetFile, const int& minWordFreq) {
 
     std::cerr << "[info] loading text" << std::endl;
     uint64_t trainStarTime = GetCurrentTimeMs();
@@ -151,6 +165,17 @@ bool TLangModel::Train(const std::string& fileName, const std::string& alphabetF
             std::cerr << "[info] processed " << (100.0 * float(i) / float(total)) << "%" << std::endl;
             lastTime = currTime;
         }
+    }
+
+    // remove lower frequency words in ngrams
+    {
+	int count;
+        count = RemoveLowFreqNgramKeys(grams1, minWordFreq);
+	std::cerr << "[info] " << count << " keys are removed from grams1 due to frequency less than " << minWordFreq;
+        count = RemoveLowFreqNgramKeys(grams2, minWordFreq);
+	std::cerr << "[info] " << count << " keys are removed from grams2 due to frequency less than " << minWordFreq;
+        count = RemoveLowFreqNgramKeys(grams3, minWordFreq);
+	std::cerr << "[info] " << count << " keys are removed from grams3 due to frequency less than " << minWordFreq;
     }
 
     VocabSize = grams1.size();

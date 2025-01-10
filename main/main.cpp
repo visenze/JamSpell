@@ -15,10 +15,11 @@ void PrintUsage(const char** argv) {
 
 int Train(const std::string& alphabetFile,
           const std::string& datasetFile,
-          const std::string& resultModelFile)
+          const std::string& resultModelFile,
+	  const int& minWordFreq)
 {
     TLangModel model;
-    model.Train(datasetFile, alphabetFile);
+    model.Train(datasetFile, alphabetFile, minWordFreq);
     model.Dump(resultModelFile);
     return 0;
 }
@@ -92,7 +93,11 @@ int main(int argc, const char** argv) {
         std::string alphabetFile = argv[2];
         std::string datasetFile = argv[3];
         std::string resultModelFile = argv[4];
-        return Train(alphabetFile, datasetFile, resultModelFile);
+		int minWordFreq = 0;
+		if (argc >= 6) {
+			minWordFreq = std::stoi(argv[5]);
+		}
+        return Train(alphabetFile, datasetFile, resultModelFile, minWordFreq);
     } else if (mode == "score") {
         if (argc < 3) {
             PrintUsage(argv);
