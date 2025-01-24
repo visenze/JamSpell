@@ -109,6 +109,30 @@ void InitializeBuckets(const T& grams, TPerfectHash& ph, std::vector<std::pair<u
     }
 }
 
+void TLangModel::RemoveLowFreqWord(const std::unordered_map<TGram1Key, TCount>& grams1, const int& minWordFreq) {
+    std::cerr << "[info] cleaning word with frequency less than " << minWordFreq << " from vocab" << std::endl;
+    std::cerr << "[info] vocab size " << WordToId.size() << " before cleaning" << std::endl;
+    std::vector<std::wstring> wordsToRemove;
+    
+    for(auto&& it: grams1) {
+        if (it.second < minWordFreq ) {
+	    TWordId wid = it.first;
+	    TWord word = GetWordById(wid);
+	    if (!word.Ptr || !word.Len) {
+		std::cerr << "error: word ID [" << wid << "] is not found" << std::endl;
+		continue;
+	    }	
+	    std::wstring w(word.Ptr, word.Len);
+	    wordsToRemove.push_back(w);
+        }
+    }
+    for(auto&& w: wordsToRemove) {
+	WordToId.erase(w);
+    }
+    std::cerr << "[info] cleaned " << wordsToRemove.size() << " words from vocab" << std::endl;
+    std::cerr << "[info] vocab size " << WordToId.size() << " after cleaning" << std::endl;
+}
+
 bool TLangModel::Train(const std::string& fileName, const std::string& alphabetFile, const int& minWordFreq) {
 
     std::cerr << "[info] loading text" << std::endl;
@@ -167,15 +191,17 @@ bool TLangModel::Train(const std::string& fileName, const std::string& alphabetF
         }
     }
 
-    // remove lower frequency words in ngrams
-    {
+    // remove lower frequency words and ngrams
+    if (minWordFreq > 1) {
+	RemoveLowFreqWord(grams1, minWordFreq);
+
 	int count;
         count = RemoveLowFreqNgramKeys(grams1, minWordFreq);
-	std::cerr << "[info] " << count << " keys are removed from grams1 due to frequency less than " << minWordFreq;
+	std::cerr << "[info] " << count << " keys are removed from grams1 due to frequency less than " << minWordFreq << std::endl;
         count = RemoveLowFreqNgramKeys(grams2, minWordFreq);
-	std::cerr << "[info] " << count << " keys are removed from grams2 due to frequency less than " << minWordFreq;
+	std::cerr << "[info] " << count << " keys are removed from grams2 due to frequency less than " << minWordFreq << std::endl;
         count = RemoveLowFreqNgramKeys(grams3, minWordFreq);
-	std::cerr << "[info] " << count << " keys are removed from grams3 due to frequency less than " << minWordFreq;
+	std::cerr << "[info] " << count << " keys are removed from grams3 due to frequency less than " << minWordFreq << std::endl;
     }
 
     VocabSize = grams1.size();
@@ -285,9 +311,9 @@ bool TLangModel::Load(const std::string& modelFileName) {
         return false;
     }
     IdToWord.clear();
-    IdToWord.resize(WordToId.size() + 1, nullptr);
+    IdToWord.resize(LastWordID + 1, L"");
     for (auto&& it: WordToId) {
-        IdToWord[it.second] = &it.first;
+        IdToWord[it.second] = it.first;
     }
     return true;
 }
@@ -329,7 +355,7 @@ TWordId TLangModel::GetWordId(const TWord& word) {
     TWordId wordId = LastWordID;
     ++LastWordID;
     it = WordToId.insert(std::make_pair(w, wordId)).first;
-    IdToWord.push_back(&(it->first));
+    IdToWord.push_back(it->first);
     return wordId;
 }
 
@@ -346,7 +372,7 @@ TWord TLangModel::GetWordById(TWordId wid) const {
     if (wid >= IdToWord.size()) {
         return TWord();
     }
-    return TWord(*IdToWord[wid]);
+    return TWord(IdToWord[wid]);
 }
 
 TCount TLangModel::GetWordCount(TWordId wid) const {

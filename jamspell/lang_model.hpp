@@ -81,6 +81,7 @@ public:
               PerfectHash, Buckets, Tokenizer, CheckSum)
 private:
     TIdSentences ConvertToIds(const TSentences& sentences);
+    void RemoveLowFreqWord(const std::unordered_map<TGram1Key, TCount>& grams1, const int& minWordFreq);
 
     double GetGram1Prob(TWordId word) const;
     double GetGram2Prob(TWordId word1, TWordId word2) const;
@@ -94,7 +95,7 @@ private:
     const TWordId UnknownWordId = std::numeric_limits<TWordId>::max();
     double K = LANG_MODEL_DEFAULT_K;
     TRobinHash WordToId;
-    std::vector<const std::wstring*> IdToWord;
+    std::vector<std::wstring> IdToWord;
     TWordId LastWordID = 0;
     TWordId TotalWords = 0;
     TWordId VocabSize = 0;
