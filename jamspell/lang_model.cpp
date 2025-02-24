@@ -133,6 +133,52 @@ void TLangModel::RemoveLowFreqWord(const std::unordered_map<TGram1Key, TCount>& 
     std::cerr << "[info] vocab size " << WordToId.size() << " after cleaning" << std::endl;
 }
 
+bool TLangModel::FinetuneVocab(const std::string vocabFileName, const std::string& alphabetFile) {
+    std::cerr << "[info] loading text" << std::endl;
+    if (!Tokenizer.LoadAlphabet(alphabetFile)) {
+        std::cerr << "[error] failed to load alphabet" << std::endl;
+        return false;
+    }
+
+    std::wstring vocabText = UTF8ToWide(LoadFile(vocabFileName));
+    ToLower(vocabText);
+    TSentences sentences = Tokenizer.Process(vocabText);
+
+    if (sentences.empty()) {
+        std::cerr << "[error] empty vocab file input" << std::endl;
+        return false;
+    }
+    std::unordered_map<std::wstring, TCount> vocab;
+    for (size_t i = 0; i < sentences.size(); ++i) {
+        const TWords& words = sentences[i];
+
+        for (auto word: words) {
+	    std::wstring w(word.Ptr, word.Len);
+            vocab[w] += 1;
+        }
+    }
+    std::vector<std::wstring> wordsToRemove;
+    for (auto&& it: WordToId) {
+	std::wstring w = it.first;
+	if (vocab.find(w) == vocab.end()) {
+	    wordsToRemove.push_back(w);   
+	}
+    }
+
+
+    std::cerr << "[info] loaded vocab from text, size = " << vocab.size() << std::endl;
+    std::cerr << "[info] current model vocab size =" << VocabSize << std::endl;
+    std::cerr << "[info] current model has " << wordsToRemove.size() << " words to be removed in this finetuning" << std::endl;
+
+    for(auto&& w: wordsToRemove) {
+	WordToId.erase(w);
+    }
+    VocabSize = WordToId.size();
+
+    std::cerr << "[info] model vocab size after finetune  = " << VocabSize << std::endl;
+    return true;
+}
+
 bool TLangModel::Train(const std::string& fileName, const std::string& alphabetFile, const int& minWordFreq) {
 
     std::cerr << "[info] loading text" << std::endl;
@@ -285,6 +331,22 @@ bool TLangModel::Dump(const std::string& modelFileName) const {
     NHandyPack::Dump(out, LANG_MODEL_VERSION);
     Dump(out);
     NHandyPack::Dump(out, LANG_MODEL_MAGIC_BYTE);
+    return true;
+}
+
+bool TLangModel::DumpVocab(const std::string& modelVocabFileName, const std::string& modelVocabFreqFileName) const {
+    std::wofstream out(modelVocabFileName);
+    std::ofstream out_freq(modelVocabFreqFileName);
+    if (!out.is_open() || !out_freq.is_open()) {
+        return false;
+    }
+
+    for (auto&& it: WordToId) {
+	out << it.first << L",";
+	TCount cnt = GetWordCount(GetWordIdNoCreate(it.first));
+	out_freq << cnt << ",";
+    }
+
     return true;
 }
 

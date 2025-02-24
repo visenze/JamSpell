@@ -58,6 +58,7 @@ public:
 class TLangModel {
 public:
     bool Train(const std::string& fileName, const std::string& alphabetFile, const int& minWordFreq=0);
+    bool FinetuneVocab(const std::string vocabFileName, const std::string& alphabetFile);
     double Score(const TWords& words) const;
     double Score(const std::wstring& str) const;
     TWord GetWord(const std::wstring& word) const;
@@ -65,6 +66,7 @@ public:
     TSentences Tokenize(const std::wstring& text) const;
 
     bool Dump(const std::string& modelFileName) const;
+    bool DumpVocab(const std::string& modelVocabFileName, const std::string& modelVocabFreqFileName) const;
     bool Load(const std::string& modelFileName);
     void Clear();
 
