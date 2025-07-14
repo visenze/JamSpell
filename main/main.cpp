@@ -13,6 +13,7 @@ void PrintUsage(const char** argv) {
     std::cerr << "    fix model.bin input.txt output.txt - automatically fix txt file" << std::endl;
     std::cerr << "    dump_vocab model.bin vocab.txt vocab_freq.txt - dump a model's vocab into a txt" << std::endl;
     std::cerr << "    finetune_vocab model.bin alphabet.txt vocab.txt resultModel.bin - finetune vocab of model" << std::endl;
+    std::cerr << "    modify_vocab_freq model.bin alphabet.txt vocab.txt vocab_freq.txt resultModel.bin - modify vocab frequency of model" << std::endl;
 }
 
 int Train(const std::string& alphabetFile,
@@ -201,7 +202,18 @@ int main(int argc, const char** argv) {
         std::string vocabTextFile = argv[4];
         std::string resultModelFile = argv[5];
         return FinetuneVocab(modelFile, alphabetFile, vocabTextFile, resultModelFile);
-    } 
+    } else if (mode == "modify_vocab_freq") {
+        if (argc < 7) {
+            PrintUsage(argv);
+            return 42;
+        }
+        std::string modelFile = argv[2];
+        std::string alphabetFile = argv[3];
+        std::string vocabTextFile = argv[4];
+        std::string vocabFreqFile = argv[5];
+        std::string resultModelFile = argv[6];
+        return ModifyVocabFreq(modelFile, alphabetFile, vocabTextFile, vocabFreqFile, resultModelFile);
+    }
 
     PrintUsage(argv);
     return 42;
