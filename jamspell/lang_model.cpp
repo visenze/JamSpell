@@ -162,6 +162,7 @@ bool TLangModel::ModifyVocabFreq(const std::string& vocabTextFile, const std::st
 
     // Parse frequency file
     // Expected format: freq_word1,freq_word2,freq_word3,...
+    std::cerr << "[info] parsing frequency file" << std::endl;
     std::unordered_map<std::wstring, TCount> freqMap;
     for (auto&& s: sentences) {
         for (auto&& w: s) {
@@ -171,12 +172,12 @@ bool TLangModel::ModifyVocabFreq(const std::string& vocabTextFile, const std::st
                 return false;
             }
             if (freqToUpdate.empty()) {
-                std::cerr << "[error] malformed frequency file, word " << WideToUTF8(word)  << " has no frequency" << std::endl;
+                std::cerr << "[error] malformed frequency file, word after " << WideToUTF8(word)  << " has no frequency" << std::endl;
                 return false;
             }
 
             // Parse the line to get the frequency
-            size_t pos = freqToUpdate.find(L',');
+            size_t pos = freqToUpdate.find(',');
             if (pos == std::string::npos) {
                 pos = freqToUpdate.size();
             }
@@ -192,6 +193,7 @@ bool TLangModel::ModifyVocabFreq(const std::string& vocabTextFile, const std::st
     }
 
     // Modify vocabulary frequencies
+    std::cerr << "[info] modifying vocab frequencies" << std::endl;
     int numModified = 0;
     for (auto&& it: freqMap) {
         TCount freq = it.second;
