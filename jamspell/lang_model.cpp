@@ -209,6 +209,7 @@ bool TLangModel::ModifyVocabFreq(const std::string& vocabTextFile, const std::st
             std::cerr << "Bucket exceeded: " << bucket << " " << Buckets.size() << "\n";
             return false;
         }
+        std::cerr << "[info] modifying bucket " << bucket << " for word " << WideToUTF8(it.first) << std::endl;
         assert(bucket < Buckets.size());
         std::pair<uint16_t, uint16_t> data;
         data.first = CityHash16(key);
