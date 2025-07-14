@@ -165,14 +165,14 @@ bool TLangModel::ModifyVocabFreq(const std::string& vocabTextFile, const std::st
     std::cerr << "[info] parsing frequency file" << std::endl;
     std::unordered_map<std::wstring, TCount> freqMap;
     for (auto&& s: sentences) {
-        for (auto&& word: s) {
-            std::wstring w(word.Ptr, word.Len);
-            if (WordToId.find(w) == WordToId.end()) {
-                std::cerr << "[error] word " << WideToUTF8(w) << " not found in model vocab" << std::endl;
+        for (auto&& w: s) {
+            std::wstring word(w.Ptr, w.Len);
+            if (WordToId.find(word) == WordToId.end()) {
+                std::cerr << "[error] word " << WideToUTF8(word) << " not found in model vocab" << std::endl;
                 return false;
             }
             if (freqToUpdate.empty()) {
-                std::cerr << "[error] malformed frequency file, word after " << WideToUTF8(w)  << " has no frequency" << std::endl;
+                std::cerr << "[error] malformed frequency file, word after " << WideToUTF8(word)  << " has no frequency" << std::endl;
                 return false;
             }
 
@@ -197,8 +197,9 @@ bool TLangModel::ModifyVocabFreq(const std::string& vocabTextFile, const std::st
     int numModified = 0;
     for (auto&& it: freqMap) {
         TCount freq = it.second;
-        TWordId wid = GetWordIdNoCreate(it.first);
-        assert(wid != UnknownWordId);
+        auto word_it = WordToId.find(it.first);
+        assert(word_it != WordToId.end());
+        TWordId wid = word_it->second;
         TCount freqInModel = GetWordCount(wid);
 
         std::string key = DumpKey(wid);
