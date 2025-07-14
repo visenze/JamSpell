@@ -165,14 +165,14 @@ bool TLangModel::ModifyVocabFreq(const std::string& vocabTextFile, const std::st
     std::cerr << "[info] parsing frequency file" << std::endl;
     std::unordered_map<std::wstring, TCount> freqMap;
     for (auto&& s: sentences) {
-        for (auto&& w: s) {
-            std::wstring word(w.Ptr, w.Len);
-            if (WordToId.find(word) == WordToId.end()) {
-                std::cerr << "[error] word " << WideToUTF8(word) << " not found in model vocab" << std::endl;
+        for (auto&& word: s) {
+            std::wstring w(word.Ptr, word.Len);
+            if (WordToId.find(w) == WordToId.end()) {
+                std::cerr << "[error] word " << WideToUTF8(w) << " not found in model vocab" << std::endl;
                 return false;
             }
             if (freqToUpdate.empty()) {
-                std::cerr << "[error] malformed frequency file, word after " << WideToUTF8(word)  << " has no frequency" << std::endl;
+                std::cerr << "[error] malformed frequency file, word after " << WideToUTF8(w)  << " has no frequency" << std::endl;
                 return false;
             }
 
@@ -240,18 +240,17 @@ bool TLangModel::FinetuneVocab(const std::string vocabFileName, const std::strin
         const TWords& words = sentences[i];
 
         for (auto word: words) {
-	    std::wstring w(word.Ptr, word.Len);
+	        std::wstring w(word.Ptr, word.Len);
             vocab[w] += 1;
         }
     }
     std::vector<std::wstring> wordsToRemove;
     for (auto&& it: WordToId) {
-	std::wstring w = it.first;
-	if (vocab.find(w) == vocab.end()) {
-	    wordsToRemove.push_back(w);   
-	}
+        std::wstring w = it.first;
+        if (vocab.find(w) == vocab.end()) {
+            wordsToRemove.push_back(w);   
+        }
     }
-
 
     std::cerr << "[info] loaded vocab from text, size = " << vocab.size() << std::endl;
     std::cerr << "[info] current model vocab size =" << VocabSize << std::endl;
