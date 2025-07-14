@@ -133,6 +133,83 @@ void TLangModel::RemoveLowFreqWord(const std::unordered_map<TGram1Key, TCount>& 
     std::cerr << "[info] vocab size " << WordToId.size() << " after cleaning" << std::endl;
 }
 
+bool TLangModel::ModifyVocabFreq(const std::string& vocabTextFile, const std::string& vocabFreqFile, const std::string& alphabetFile) {
+    std::cerr << "[info] loading text" << std::endl;
+    if (!Tokenizer.LoadAlphabet(alphabetFile)) {
+        std::cerr << "[error] failed to load alphabet" << std::endl;
+        return false;
+    }
+
+    std::wstring vocabText = UTF8ToWide(LoadFile(vocabTextFile));
+    ToLower(vocabText);
+    TSentences sentences = Tokenizer.Process(vocabText);
+
+    if (sentences.empty()) {
+        std::cerr << "[error] empty vocab file input" << std::endl;
+        return false;
+    }
+
+    // Load frequency file
+    std::ifstream freqFile(vocabFreqFile);
+    if (!freqFile.is_open()) {
+        std::cerr << "[error] failed to open frequency file" << std::endl;
+        return false;
+    }
+
+    std::string freqToUpdate;
+    std::getline(freqFile, freqToUpdate);
+    
+
+    // Parse frequency file
+    // Expected format: freq1,freq2,freq3,...
+    std::unordered_map<std::wstring, TCount> freqMap;
+    for (auto&& s: sentences) {
+        for (auto&& w: s) {
+            std::wstring word(w.Ptr, w.Len);
+            if (WordToId.find(word) == WordToId.end()) {
+                std::cerr << "[error] word " << WideToUTF8(word) << " not found in model vocab" << std::endl;
+                return false;
+            }
+            // Parse the line to get the frequency
+            size_t pos = freqToUpdate.find(L',');
+            if (pos == std::wstring::npos) {
+                std::cerr << "[error] malformed frequency file, word " << WideToUTF8(word)  << " has no frequency" << std::endl;
+                return false;
+            }
+            TCount count = static_cast<TCount>(std::stoi(freqToUpdate.substr(0, pos)));
+            freqMap[word] = count;
+            freqToUpdate = freqToUpdate.substr(pos + 1);
+        }
+    }
+
+    // Modify vocabulary frequencies
+    int numModified = 0;
+    for (auto&& it: freqMap) {
+        TCount freq = it.second;
+        TWordId wid = GetWordIdNoCreate(it.first);
+        assert(wid != UnknownWordId);
+        TCount freqInModel = GetWordCount(wid);
+
+        std::string key = DumpKey(wid);
+        uint32_t bucket = PerfectHash.Hash(key);
+        if (bucket >= Buckets.size()) {
+            std::cerr << "Bucket exceeded: " << bucket << " " << Buckets.size() << "\n";
+            return false;
+        }
+        assert(bucket < Buckets.size());
+        std::pair<uint16_t, uint16_t> data;
+        data.first = CityHash16(key);
+        TCount freqInModel = GetWordCount(GetWordIdNoCreate(it.first));
+        data.second = PackInt32(freq);
+        std::cerr << "[info] modifying frequency for word " << WideToUTF8(it.first) << " from " << freqInModel << " to " << freq << std::endl;
+        Buckets[bucket] = data;
+        numModified++;
+    }
+
+    std::cerr << "[info] modified " << numModified << " word frequencies" << std::endl;
+    return true;
+}
+
 bool TLangModel::FinetuneVocab(const std::string vocabFileName, const std::string& alphabetFile) {
     std::cerr << "[info] loading text" << std::endl;
     if (!Tokenizer.LoadAlphabet(alphabetFile)) {

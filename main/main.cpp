@@ -118,6 +118,28 @@ int FinetuneVocab(const std::string& modelFile, const std::string& alphabetFile,
     return 0;
 }
 
+int ModifyVocabFreq(const std::string& modelFile, const std::string& alphabetFile, 
+		const std::string& vocabTextFile, const std::string& vocabFreqFile, const std::string& resultModelFile) {
+    TLangModel model;
+    
+    std::cerr << "[info] loading model" << std::endl;
+    if (!model.Load(modelFile)) {
+        std::cerr << "[error] failed to load model" << std::endl;
+        return 42;
+    }
+
+    if (!model.ModifyVocabFreq(vocabTextFile, vocabFreqFile, alphabetFile)) {
+        std::cerr << "[error] failed to modify vocab frequency" << std::endl;
+        return 42;
+    }
+
+    if (!model.Dump(resultModelFile)) {
+        std::cerr << "[error] failed to save modified model" << std::endl;
+        return 42;
+    }
+    return 0;
+}
+
 int main(int argc, const char** argv) {
     if (argc < 2) {
         PrintUsage(argv);
