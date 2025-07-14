@@ -201,6 +201,7 @@ bool TLangModel::ModifyVocabFreq(const std::string& vocabTextFile, const std::st
         assert(word_it != WordToId.end());
         TWordId wid = word_it->second;
         TCount freqInModel = GetWordCount(wid);
+        std::cerr << "[info] modifying frequency for word " << WideToUTF8(it.first) << " from " << freqInModel << " to " << freq << std::endl;
 
         std::string key = DumpKey(wid);
         uint32_t bucket = PerfectHash.Hash(key);
@@ -212,7 +213,6 @@ bool TLangModel::ModifyVocabFreq(const std::string& vocabTextFile, const std::st
         std::pair<uint16_t, uint16_t> data;
         data.first = CityHash16(key);
         data.second = PackInt32(freq);
-        std::cerr << "[info] modifying frequency for word " << WideToUTF8(it.first) << " from " << freqInModel << " to " << freq << std::endl;
         Buckets[bucket] = data;
         numModified++;
     }
