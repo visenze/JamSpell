@@ -199,7 +199,6 @@ bool TLangModel::ModifyVocabFreq(const std::string& vocabTextFile, const std::st
         assert(bucket < Buckets.size());
         std::pair<uint16_t, uint16_t> data;
         data.first = CityHash16(key);
-        TCount freqInModel = GetWordCount(GetWordIdNoCreate(it.first));
         data.second = PackInt32(freq);
         std::cerr << "[info] modifying frequency for word " << WideToUTF8(it.first) << " from " << freqInModel << " to " << freq << std::endl;
         Buckets[bucket] = data;
