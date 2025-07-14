@@ -161,7 +161,7 @@ bool TLangModel::ModifyVocabFreq(const std::string& vocabTextFile, const std::st
     
 
     // Parse frequency file
-    // Expected format: freq1,freq2,freq3,...
+    // Expected format: freq_word1,freq_word2,freq_word3,...
     std::unordered_map<std::wstring, TCount> freqMap;
     for (auto&& s: sentences) {
         for (auto&& w: s) {
@@ -170,15 +170,24 @@ bool TLangModel::ModifyVocabFreq(const std::string& vocabTextFile, const std::st
                 std::cerr << "[error] word " << WideToUTF8(word) << " not found in model vocab" << std::endl;
                 return false;
             }
-            // Parse the line to get the frequency
-            size_t pos = freqToUpdate.find(L',');
-            if (pos == std::wstring::npos) {
+            if (freqToUpdate.empty()) {
                 std::cerr << "[error] malformed frequency file, word " << WideToUTF8(word)  << " has no frequency" << std::endl;
                 return false;
             }
+
+            // Parse the line to get the frequency
+            size_t pos = freqToUpdate.find(L',');
+            if (pos == std::string::npos) {
+                pos = freqToUpdate.size();
+            }
             TCount count = static_cast<TCount>(std::stoi(freqToUpdate.substr(0, pos)));
             freqMap[word] = count;
-            freqToUpdate = freqToUpdate.substr(pos + 1);
+
+            if (pos == freqToUpdate.size()) {
+                freqToUpdate.clear();
+            } else {
+                freqToUpdate = freqToUpdate.substr(pos + 1);
+            }
         }
     }
 
