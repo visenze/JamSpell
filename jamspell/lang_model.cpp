@@ -203,18 +203,21 @@ bool TLangModel::ModifyVocabFreq(const std::string& vocabTextFile, const std::st
         TCount freqInModel = GetWordCount(wid);
         std::cerr << "[info] modifying frequency for word " << WideToUTF8(it.first) << " from " << freqInModel << " to " << freq << std::endl;
 
-        std::string key = DumpKey(wid);
-        uint32_t bucket = PerfectHash.Hash(key);
-        if (bucket >= Buckets.size()) {
-            std::cerr << "Bucket exceeded: " << bucket << " " << Buckets.size() << "\n";
-            return false;
-        }
+        // try find the bucket for this word
+        // copying the method from GetGramHashCount()
+        TGram1Key key = wid;
+        constexpr int TMP_BUF_SIZE = 128;
+        static char tmpBuff[TMP_BUF_SIZE];
+        static MemStream tmpBuffStream(tmpBuff, TMP_BUF_SIZE - 1);
+        static std::ostream out(&tmpBuffStream);
+        tmpBuffStream.Reset();
+        NHandyPack::Dump(out, key);
+
+        uint32_t bucket = PerfectHash.Hash(tmpBuff, tmpBuffStream.Size());
+        assert(bucket < PerfectHash.BucketsNumber());
+
         std::cerr << "[info] modifying bucket " << bucket << " for word " << WideToUTF8(it.first) << std::endl;
-        assert(bucket < Buckets.size());
-        std::pair<uint16_t, uint16_t> data;
-        data.first = CityHash16(key);
-        data.second = PackInt32(freq);
-        Buckets[bucket] = data;
+        Buckets[bucket].second = PackInt32(freq);
         numModified++;
     }
 
